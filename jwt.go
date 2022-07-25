@@ -9,10 +9,10 @@ import (
 )
 
 type JwtMgr struct {
-    Provider JWKSProvider
+    Provider *JWKSProvider
 }
 
-func NewJwtMgr(provider JWKSProvider) *JwtMgr {
+func NewJwtMgr(provider *JWKSProvider) *JwtMgr {
     return &JwtMgr{
         Provider: provider,
     }

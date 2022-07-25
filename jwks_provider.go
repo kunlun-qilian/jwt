@@ -12,12 +12,7 @@ import (
     "golang.org/x/crypto/pbkdf2"
 )
 
-type JWKSProvider interface {
-    JWKForSign() jwk.RSAPrivateKey
-    KeySet() jwk.Set
-}
-
-type JwtConfig struct {
+type JWKSProvider struct {
     PrivateKey Password
     PublicKey  Password
 
@@ -27,15 +22,15 @@ type JwtConfig struct {
     jwks jwk.Set
 }
 
-func (j *JwtConfig) JWKForSign() jwk.RSAPrivateKey {
+func (j *JWKSProvider) JWKForSign() jwk.RSAPrivateKey {
     return j.rsaPrivateKey
 }
 
-func (j *JwtConfig) KeySet() jwk.Set {
+func (j *JWKSProvider) KeySet() jwk.Set {
     return j.jwks
 }
 
-func (j *JwtConfig) Init() {
+func (j *JWKSProvider) Init() {
     jwks := jwk.NewSet()
 
     pk, err := base64.StdEncoding.DecodeString(j.PrivateKey.String())
@@ -74,7 +69,7 @@ func (j *JwtConfig) Init() {
     j.jwks, _ = jwk.PublicSetOf(jwks)
 }
 
-func (j *JwtConfig) Public() {
+func (j *JWKSProvider) Public() {
     jwks := jwk.NewSet()
 
     publicKey, err := ParseRSAPublicKeyFromPEM([]byte(j.PublicKey.String()))
