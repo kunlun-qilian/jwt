@@ -29,26 +29,40 @@ func WithJWKSProvider(db JWKSProvider) func(ctx context.Context) context.Context
     }
 }
 
+type JwtConfig struct {
+    PrivateKey Password `env:""`
+    PublicKey  Password `env:""`
+}
+
 type JwtMgr struct {
-    PrivateKey    Password `env:""`
-    PublicKey     Password `env:""`
+    PrivateKey    Password
+    PublicKey     Password
     rsaPrivateKey jwk.RSAPrivateKey
     rsaPublicKey  jwk.RSAPublicKey
     jwks          jwk.Set
 }
 
-func (opt *JwtMgr) JWKForSign() jwk.RSAPrivateKey {
-    return opt.rsaPrivateKey
+func NewJwtMgr(c *JwtConfig) *JwtMgr {
+    jwtMgr := JwtMgr{}
+    jwtMgr.PrivateKey = c.PrivateKey
+    jwtMgr.PublicKey = c.PublicKey
+
+    jwtMgr.Init()
+    return &jwtMgr
 }
 
-func (opt *JwtMgr) KeySet() jwk.Set {
-    return opt.jwks
+func (j *JwtMgr) JWKForSign() jwk.RSAPrivateKey {
+    return j.rsaPrivateKey
 }
 
-func (opt *JwtMgr) Init() {
+func (j *JwtMgr) KeySet() jwk.Set {
+    return j.jwks
+}
+
+func (j *JwtMgr) Init() {
     jwks := jwk.NewSet()
 
-    pk, err := base64.StdEncoding.DecodeString(opt.PrivateKey.String())
+    pk, err := base64.StdEncoding.DecodeString(j.PrivateKey.String())
     if err != nil {
         panic(err)
     }
@@ -63,7 +77,7 @@ func (opt *JwtMgr) Init() {
         panic(err)
     }
 
-    keyID := genKeyID(opt.PrivateKey.String())
+    keyID := genKeyID(j.PrivateKey.String())
 
     headers := map[string]interface{}{
         jwk.KeyIDKey:     keyID,
@@ -77,17 +91,17 @@ func (opt *JwtMgr) Init() {
         }
     }
 
-    opt.rsaPrivateKey = rsaPrivateKey
+    j.rsaPrivateKey = rsaPrivateKey
 
     jwks.Add(rsaPrivateKey)
 
-    opt.jwks, _ = jwk.PublicSetOf(jwks)
+    j.jwks, _ = jwk.PublicSetOf(jwks)
 }
 
-func (opt *JwtMgr) Public() {
+func (j *JwtMgr) Public() {
     jwks := jwk.NewSet()
 
-    publicKey, err := ParseRSAPublicKeyFromPEM([]byte(opt.PublicKey.String()))
+    publicKey, err := ParseRSAPublicKeyFromPEM([]byte(j.PublicKey.String()))
     if err != nil {
         panic(err)
     }
@@ -97,7 +111,7 @@ func (opt *JwtMgr) Public() {
         panic(err)
     }
 
-    keyID := genKeyID(opt.PrivateKey.String())
+    keyID := genKeyID(j.PrivateKey.String())
 
     headers := map[string]interface{}{
         jwk.KeyIDKey:     keyID,
@@ -111,11 +125,11 @@ func (opt *JwtMgr) Public() {
         }
     }
 
-    opt.rsaPublicKey = rsaPublicKey
+    j.rsaPublicKey = rsaPublicKey
 
     jwks.Add(rsaPublicKey)
 
-    opt.jwks, _ = jwk.PublicSetOf(jwks)
+    j.jwks, _ = jwk.PublicSetOf(jwks)
 }
 
 func genKeyID(pk string) string {
