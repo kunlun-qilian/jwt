@@ -7,12 +7,9 @@ import (
     "encoding/base64"
     "encoding/pem"
     "errors"
-    "github.com/google/uuid"
     "github.com/lestrrat-go/jwx/jwa"
     "github.com/lestrrat-go/jwx/jwk"
-    "github.com/lestrrat-go/jwx/jwt"
     "golang.org/x/crypto/pbkdf2"
-    "time"
 )
 
 type JWKSProvider interface {
@@ -166,15 +163,4 @@ func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
     }
 
     return pkey, nil
-}
-
-func (g *JwtConfig) SignToken(jwksProvider JWKSProvider, audienceKey, subjectKey, issuerKey string) ([]byte, error) {
-    now := time.Now()
-    t := jwt.New()
-    _ = t.Set(jwt.AudienceKey, audienceKey)
-    _ = t.Set(jwt.SubjectKey, subjectKey)
-    _ = t.Set(jwt.IssuerKey, issuerKey)
-    _ = t.Set(jwt.JwtIDKey, uuid.New().String())
-    _ = t.Set(jwt.IssuedAtKey, now)
-    return jwt.Sign(t, jwa.RS256, jwksProvider.JWKForSign())
 }
