@@ -34,7 +34,7 @@ func (c *JwtMgr) validate(tokenStr string) (jwt.Token, error) {
     return tok, nil
 }
 
-func (c *JwtMgr) SignToken(audienceKey, subjectKey, issuerKey string, opts map[string]interface{}) ([]byte, error) {
+func (c *JwtMgr) SignToken(audienceKey, subjectKey, issuerKey string, expire time.Time, opts map[string]interface{}) ([]byte, error) {
     now := time.Now()
     t := jwt.New()
     _ = t.Set(jwt.AudienceKey, audienceKey)
@@ -42,6 +42,7 @@ func (c *JwtMgr) SignToken(audienceKey, subjectKey, issuerKey string, opts map[s
     _ = t.Set(jwt.IssuerKey, issuerKey)
     _ = t.Set(jwt.JwtIDKey, uuid.New().String())
     _ = t.Set(jwt.IssuedAtKey, now)
+    _ = t.Set(jwt.ExpirationKey, expire)
 
     if opts != nil {
         for k, v := range opts {
