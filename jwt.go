@@ -6,17 +6,17 @@ import (
     "github.com/lestrrat-go/jwx/jwt"
 )
 
-func NewKeySet(set jwk.Set) *KeySet {
-    return &KeySet{
+type JwtMgr struct {
+    jwk.Set
+}
+
+func NewJwtMgr(set jwk.Set) *JwtMgr {
+    return &JwtMgr{
         Set: set,
     }
 }
 
-type KeySet struct {
-    jwk.Set
-}
-
-func (c *KeySet) Validate(tokenStr string) (jwt.Token, error) {
+func (c *JwtMgr) Validate(tokenStr string) (jwt.Token, error) {
     tok, err := c.validate(tokenStr)
     if err != nil {
         return nil, err
@@ -24,7 +24,7 @@ func (c *KeySet) Validate(tokenStr string) (jwt.Token, error) {
     return tok, nil
 }
 
-func (c *KeySet) validate(tokenStr string) (jwt.Token, error) {
+func (c *JwtMgr) validate(tokenStr string) (jwt.Token, error) {
     tok, err := jwt.ParseString(tokenStr, jwt.WithKeySet(c))
     if err != nil {
         return nil, fmt.Errorf("valid Token Error:%s ", err.Error())

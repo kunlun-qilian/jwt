@@ -1,7 +1,6 @@
 package jwt
 
 import (
-    "context"
     "crypto/rsa"
     "crypto/sha256"
     "crypto/x509"
@@ -21,45 +20,25 @@ type JWKSProvider interface {
     KeySet() jwk.Set
 }
 
-type contextKeyJWKSProvider int
-
-func WithJWKSProvider(db JWKSProvider) func(ctx context.Context) context.Context {
-    return func(ctx context.Context) context.Context {
-        return context.WithValue(ctx, contextKeyJWKSProvider(0), db)
-    }
-}
-
 type JwtConfig struct {
-    PrivateKey Password `env:""`
-    PublicKey  Password `env:""`
-}
+    PrivateKey Password
+    PublicKey  Password
 
-type JwtMgr struct {
-    PrivateKey    Password
-    PublicKey     Password
     rsaPrivateKey jwk.RSAPrivateKey
     rsaPublicKey  jwk.RSAPublicKey
-    jwks          jwk.Set
+
+    jwks jwk.Set
 }
 
-func NewJwtMgr(c *JwtConfig) *JwtMgr {
-    jwtMgr := JwtMgr{}
-    jwtMgr.PrivateKey = c.PrivateKey
-    jwtMgr.PublicKey = c.PublicKey
-
-    jwtMgr.Init()
-    return &jwtMgr
-}
-
-func (j *JwtMgr) JWKForSign() jwk.RSAPrivateKey {
+func (j *JwtConfig) JWKForSign() jwk.RSAPrivateKey {
     return j.rsaPrivateKey
 }
 
-func (j *JwtMgr) KeySet() jwk.Set {
+func (j *JwtConfig) KeySet() jwk.Set {
     return j.jwks
 }
 
-func (j *JwtMgr) Init() {
+func (j *JwtConfig) Init() {
     jwks := jwk.NewSet()
 
     pk, err := base64.StdEncoding.DecodeString(j.PrivateKey.String())
@@ -98,7 +77,7 @@ func (j *JwtMgr) Init() {
     j.jwks, _ = jwk.PublicSetOf(jwks)
 }
 
-func (j *JwtMgr) Public() {
+func (j *JwtConfig) Public() {
     jwks := jwk.NewSet()
 
     publicKey, err := ParseRSAPublicKeyFromPEM([]byte(j.PublicKey.String()))
@@ -189,7 +168,7 @@ func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
     return pkey, nil
 }
 
-func (g *JwtMgr) SignToken(jwksProvider JWKSProvider, audienceKey, subjectKey, issuerKey string) ([]byte, error) {
+func (g *JwtConfig) SignToken(jwksProvider JWKSProvider, audienceKey, subjectKey, issuerKey string) ([]byte, error) {
     now := time.Now()
     t := jwt.New()
     _ = t.Set(jwt.AudienceKey, audienceKey)
